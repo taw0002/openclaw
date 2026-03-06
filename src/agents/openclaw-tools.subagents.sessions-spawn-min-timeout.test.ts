@@ -60,16 +60,19 @@ function findLastCall(calls: GatewayCall[], predicate: (call: GatewayCall) => bo
 
 async function runSpawnAndReadTimeout(params: {
   callId: string;
-  runTimeoutSeconds: number;
+  runTimeoutSeconds?: number;
   subagentsConfig?: Record<string, unknown>;
 }) {
   setSubagentConfig(params.subagentsConfig);
 
   const tool = createSessionsSpawnTool({ agentSessionKey: "agent:test:main" });
-  const result = await tool.execute(params.callId, {
+  const spawnArgs: { task: string; runTimeoutSeconds?: number } = {
     task: "hello",
-    runTimeoutSeconds: params.runTimeoutSeconds,
-  });
+  };
+  if (typeof params.runTimeoutSeconds === "number") {
+    spawnArgs.runTimeoutSeconds = params.runTimeoutSeconds;
+  }
+  const result = await tool.execute(params.callId, spawnArgs);
   expect(result.details).toMatchObject({ status: "accepted" });
 
   const calls = callGatewayMock.mock.calls.map((call) => call[0] as GatewayCall);
@@ -124,6 +127,15 @@ describe("sessions_spawn minRunTimeoutSeconds floor", () => {
     const timeout = await runSpawnAndReadTimeout({
       callId: "call-4",
       runTimeoutSeconds: 120,
+    });
+
+    expect(timeout).toBe(120);
+  });
+
+  it("floor applies to cfgSubagentTimeout fallback when agent omits runTimeoutSeconds", async () => {
+    const timeout = await runSpawnAndReadTimeout({
+      callId: "call-5",
+      subagentsConfig: { runTimeoutSeconds: 60, minRunTimeoutSeconds: 120 },
     });
 
     expect(timeout).toBe(120);
