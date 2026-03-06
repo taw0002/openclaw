@@ -350,7 +350,7 @@ export function resolveAcpClientSpawnEnv(
   baseEnv: NodeJS.ProcessEnv = process.env,
   options?: { stripKeys?: ReadonlySet<string> },
 ): NodeJS.ProcessEnv {
-  const env = { ...baseEnv, OPENCLAW_SHELL: "acp-client" };
+  const env: NodeJS.ProcessEnv = { ...baseEnv, OPENCLAW_SHELL: "acp-client" };
   if (options?.stripKeys) {
     for (const key of options.stripKeys) {
       delete env[key];
