@@ -90,6 +90,19 @@ describe("resolveAcpClientSpawnEnv", () => {
 
     expect(baseEnv.OPENAI_API_KEY).toBe("sk-original");
   });
+
+  it("preserves OPENCLAW_SHELL even when stripKeys contains it", () => {
+    const env = resolveAcpClientSpawnEnv(
+      {
+        OPENCLAW_SHELL: "skill-overridden",
+        OPENAI_API_KEY: "sk-leaked",
+      },
+      { stripKeys: new Set(["OPENCLAW_SHELL", "OPENAI_API_KEY"]) },
+    );
+
+    expect(env.OPENCLAW_SHELL).toBe("acp-client");
+    expect(env.OPENAI_API_KEY).toBeUndefined();
+  });
 });
 
 describe("resolveAcpClientSpawnInvocation", () => {
