@@ -75,4 +75,42 @@ describe("normalizeStoredCronJobs", () => {
       channel: "slack",
     });
   });
+
+  it("does not report payloadKind issue for already-normalized payload kinds (#44054)", () => {
+    const jobs = [
+      {
+        id: "already-ok",
+        name: "Already Normalized",
+        enabled: true,
+        schedule: { kind: "cron", expr: "0 * * * *", staggerMs: 300000 },
+        wakeMode: "next-heartbeat",
+        sessionTarget: "isolated",
+        payload: { kind: "agentTurn", message: "hello" },
+        delivery: { mode: "announce" },
+        state: {},
+      },
+      {
+        id: "also-ok",
+        name: "Also Normalized",
+        enabled: true,
+        schedule: { kind: "at", at: new Date().toISOString() },
+        wakeMode: "next-heartbeat",
+        sessionTarget: "main",
+        payload: { kind: "systemEvent", text: "tick" },
+        state: {},
+      },
+    ] as Array<Record<string, unknown>>;
+
+    const result = normalizeStoredCronJobs(jobs);
+
+    // payload.kind values are already correct — should NOT be flagged
+    expect(result.issues.payloadKind).toBeUndefined();
+    expect(result.issues.legacyPayloadKind).toBeUndefined();
+
+    // Verify payload kinds weren't changed
+    const p0 = (jobs[0].payload as { kind: string }).kind;
+    const p1 = (jobs[1].payload as { kind: string }).kind;
+    expect(p0).toBe("agentTurn");
+    expect(p1).toBe("systemEvent");
+  });
 });
